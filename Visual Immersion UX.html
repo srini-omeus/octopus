@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alice: Semantic Reader Experience</title>
+    <style>
+        :root {
+            --bg-color: #f7f5e8; /* Warm Parchment */
+            --text-color: #2b2b2b;
+            --pivot-color: #c75c2e; /* Burnt Orange for logic pivots */
+            --dialogue-color: #1a1a1a;
+            --dim-color: #888;
+            --accent-blue: #e3effa; /* For Pool of Tears */
+            --font-main: "Charter", "Bitstream Charter", "Sitka Text", Cambria, serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            margin: 0;
+            padding: 0;
+            transition: background-color 2s ease;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* --- THE READER FRAME --- */
+        #reader-container {
+            max-width: 680px; /* Optimal line length for comprehension */
+            margin: 0 auto;
+            padding: 40px 20px;
+            padding-bottom: 200px;
+        }
+
+        /* --- SEMANTIC TYPOGRAPHY --- */
+        
+        /* The Clause Break: This is the core logic. 
+           Instead of wrapping at the screen edge, we wrap at the thought edge. */
+        .sentence-wrapper {
+            display: block;
+            margin-bottom: 1.2rem; /* Space between sentences */
+        }
+
+        .clause {
+            display: block; /* Forces vertical stacking */
+            padding-left: 1rem; /* Indent subsequent clauses for hierarchy */
+            text-indent: -1rem; /* Hanging indent for flow */
+            margin-bottom: 0.2rem; /* Micro-spacing between clauses */
+        }
+
+        .clause.first-clause {
+            padding-left: 0;
+            text-indent: 0;
+            font-weight: 400;
+        }
+
+        /* Logical Pivots: The "Hinges" of the story */
+        .pivot {
+            font-weight: 700;
+            color: var(--pivot-color);
+            font-size: 0.95em;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-right: 4px;
+        }
+
+        /* Dialogue: Slightly heavier to distinguish speech from narration */
+        .dialogue {
+            font-weight: 600;
+            color: var(--dialogue-color);
+        }
+
+        /* --- ABSTRACT MARGIN GLYPHS --- */
+        /* These appear in the left gutter to signal context */
+        .glyph-marker {
+            position: absolute;
+            left: -40px;
+            font-family: sans-serif;
+            font-size: 1.2rem;
+            opacity: 0.4;
+            font-weight: bold;
+            user-select: none;
+        }
+        
+        .sentence-wrapper {
+            position: relative; /* Anchor for the glyph */
+        }
+
+        /* --- INTERACTIVE MECHANICS --- */
+
+        /* The Fog: Dense text is slightly blurred until interaction */
+        .foggy {
+            filter: blur(2px);
+            opacity: 0.7;
+            transition: all 0.6s ease;
+            cursor: pointer;
+        }
+        .foggy:hover, .foggy:active, .foggy.clear {
+            filter: blur(0);
+            opacity: 1;
+        }
+
+        /* Chapter Headings */
+        h2 {
+            margin-top: 80px;
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            text-align: center;
+            border-bottom: 1px solid var(--pivot-color);
+            padding-bottom: 20px;
+        }
+
+        h3 {
+            text-align: center;
+            font-style: italic;
+            font-weight: 400;
+            margin-bottom: 50px;
+        }
+
+        /* --- SPECIFIC SCENE STYLING --- */
+
+        /* The Mouse's Tale (Concrete Poetry) */
+        .concrete-poetry {
+            font-size: 12px;
+            line-height: 1.2;
+            white-space: pre;
+            overflow-x: auto;
+            margin: 40px 0;
+            color: var(--dim-color);
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="reader-container">
+    </div>
+
+<script>
+    // --- 1. THE RAW TEXT (Preserved Integrity) ---
+    // We store the text structure here. In a real app, this is fetched.
+    const bookData = [
+        {
+            type: 'header',
+            title: 'CHAPTER I.',
+            subtitle: 'Down the Rabbit-Hole'
+        },
+        {
+            type: 'text',
+            content: `Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do: once or twice she had peeped into the book her sister was reading, but it had no pictures or conversations in it, “and what is the use of a book,” thought Alice “without pictures or conversations?”`
+        },
+        {
+            type: 'text',
+            content: `So she was considering in her own mind (as well as she could, for the hot day made her feel very sleepy and stupid), whether the pleasure of making a daisy-chain would be worth the trouble of getting up and picking the daisies, when suddenly a White Rabbit with pink eyes ran close by her.`
+        },
+        {
+            type: 'text',
+            content: `There was nothing so very remarkable in that; nor did Alice think it so very much out of the way to hear the Rabbit say to itself, “Oh dear! Oh dear! I shall be late!” (when she thought it over afterwards, it occurred to her that she ought to have wondered at this, but at the time it all seemed quite natural); but when the Rabbit actually took a watch out of its waistcoat-pocket, and looked at it, and then hurried on, Alice started to her feet, for it flashed across her mind that she had never before seen a rabbit with either a waistcoat-pocket, or a watch to take out of it, and burning with curiosity, she ran across the field after it, and fortunately was just in time to see it pop down a large rabbit-hole under the hedge.`
+        },
+        {
+            type: 'text',
+            class: 'falling-sequence',
+            glyph: '⬇', // Abstract symbol for Falling
+            content: `In another moment down went Alice after it, never once considering how in the world she was to get out again.`
+        },
+        {
+            type: 'text',
+            glyph: '⬇',
+            content: `The rabbit-hole went straight on like a tunnel for some way, and then dipped suddenly down, so suddenly that Alice had not a moment to think about stopping herself before she found herself falling down a very deep well.`
+        },
+        {
+            type: 'text',
+            class: 'dense-logic', // Triggers "Fog"
+            content: `Either the well was very deep, or she fell very slowly, for she had plenty of time as she went down to look about her and to wonder what was going to happen next. First, she tried to look down and make out what she was coming to, but it was too dark to see anything; then she looked at the sides of the well, and noticed that they were filled with cupboards and book-shelves; here and there she saw maps and pictures hung upon pegs.`
+        },
+        {
+            type: 'text',
+            content: `Down, down, down. Would the fall never come to an end? “I wonder how many miles I’ve fallen by this time?” she said aloud. “I must be getting somewhere near the centre of the earth. Let me see: that would be four thousand miles down, I think—”`
+        },
+        {
+            type: 'header',
+            title: 'CHAPTER II.',
+            subtitle: 'The Pool of Tears',
+            bgChange: '#eaf4fc' // Triggers cool blue background
+        },
+        {
+            type: 'text',
+            glyph: '?',
+            content: `“Curiouser and curiouser!” cried Alice (she was so much surprised, that for the moment she quite forgot how to speak good English); “now I’m opening out like the largest telescope that ever was! Good-bye, feet!”`
+        },
+        {
+            type: 'text',
+            content: `Just then her head struck against the roof of the hall: in fact she was now more than nine feet high, and she at once took up the little golden key and hurried off to the garden door.`
+        },
+        {
+            type: 'text',
+            glyph: '💧',
+            content: `“You ought to be ashamed of yourself,” said Alice, “a great girl like you,” (she might well say this), “to go on crying in this way! Stop this moment, I tell you!” But she went on all the same, shedding gallons of tears, until there was a large pool all round her, about four inches deep and reaching half down the hall.`
+        },
+        {
+            type: 'header',
+            title: 'CHAPTER III.',
+            subtitle: 'A Caucus-Race and a Long Tale',
+            bgChange: '#f0f0f0' // Grey/Chaotic
+        },
+        {
+            type: 'text',
+            glyph: '●', // Circular logic
+            content: `“What I was going to say,” said the Dodo in an offended tone, “was, that the best thing to get us dry would be a Caucus-race.”`
+        },
+        {
+            type: 'text',
+            content: `“What is a Caucus-race?” said Alice; not that she wanted much to know, but the Dodo had paused as if it thought that somebody ought to speak, and no one else seemed inclined to say anything.`
+        },
+        {
+            type: 'text',
+            content: `“Why,” said the Dodo, “the best way to explain it is to do it.”`
+        },
+        {
+            type: 'text',
+            class: 'tale-visual',
+            content: `(The Mouse's Tale...)`
+        }
+    ];
+
+    // --- 2. THE AI TYPESETTER ENGINE ---
+    
+    const container = document.getElementById('reader-container');
+
+    // List of "Pivot" words that signal logical turns
+    const pivots = ["but", "however", "suddenly", "although", "alas", "so", "for", "yet", "nor"];
+
+    function processText(data) {
+        data.forEach((block, index) => {
+            
+            // Handle Headers
+            if (block.type === 'header') {
+                const h2 = document.createElement('h2');
+                h2.innerText = block.title;
+                const h3 = document.createElement('h3');
+                h3.innerText = block.subtitle;
+                
+                // Add an Intersection Observer to change BG color when this header hits the viewport
+                if (block.bgChange) {
+                    h2.setAttribute('data-bg', block.bgChange);
+                    observeBackground(h2);
+                }
+                
+                container.appendChild(h2);
+                container.appendChild(h3);
+                return;
+            }
+
+            // Handle Special Visuals (The Mouse Tail)
+            if (block.class === 'tale-visual') {
+                const tail = document.createElement('div');
+                tail.className = 'concrete-poetry';
+                tail.innerText = `
+    Fury said to a mouse, That he met in the house,
+    'Let us both go to law: I will prosecute you.—
+      Come, I'll take no denial; We must have a trial:
+        For really this morning I've nothing to do.'
+          Said the mouse to the cur, 'Such a trial,
+            dear sir, With no jury or judge, would be
+              wasting our breath.' 'I'll be judge,
+                I'll be jury,' Said cunning old Fury:
+                  'I'll try the whole cause,
+                    and condemn
+                      you
+                       to
+                        death.'”`;
+                container.appendChild(tail);
+                return;
+            }
+
+            // --- THE CORE LOGIC: CLAUSE BREAKING ---
+            const wrapper = document.createElement('div');
+            wrapper.className = 'sentence-wrapper';
+            
+            if (block.class === 'dense-logic') {
+                wrapper.classList.add('foggy');
+                wrapper.onclick = function() { this.classList.add('clear'); };
+            }
+
+            // Add Margin Glyph if present
+            if (block.glyph) {
+                const glyph = document.createElement('div');
+                glyph.className = 'glyph-marker';
+                glyph.innerText = block.glyph;
+                wrapper.appendChild(glyph);
+            }
+
+            // Split the paragraph into sentences first
+            // Note: This is a simple regex for demo purposes. A real app uses NLP.
+            const rawSentences = block.content.match( /[^\.!\?]+[\.!\?]+/g );
+            
+            if (!rawSentences) return; // safety
+
+            rawSentences.forEach(sentence => {
+                // Split sentence into clauses based on punctuation (semicolon, comma, colon)
+                // We keep the delimiter in the string
+                const clauses = sentence.split(/([,;:]\s)/); 
+                
+                let combinedClauses = [];
+                for (let i = 0; i < clauses.length; i+=2) {
+                    let text = clauses[i];
+                    let punct = clauses[i+1] || "";
+                    combinedClauses.push(text + punct);
+                }
+
+                combinedClauses.forEach((clauseText, i) => {
+                    const span = document.createElement('span');
+                    span.className = i === 0 ? 'clause first-clause' : 'clause';
+                    
+                    // Highlight Pivots
+                    let htmlContent = clauseText;
+                    
+                    // Highlight Dialogue
+                    if (htmlContent.includes('“')) {
+                        htmlContent = `<span class="dialogue">${htmlContent}</span>`;
+                    }
+
+                    // Highlight Logic Pivots (Case insensitive search)
+                    pivots.forEach(pivot => {
+                        const regex = new RegExp(`\\b${pivot}\\b`, 'gi');
+                        htmlContent = htmlContent.replace(regex, match => `<span class="pivot">${match}</span>`);
+                    });
+
+                    span.innerHTML = htmlContent;
+                    wrapper.appendChild(span);
+                });
+            });
+
+            container.appendChild(wrapper);
+        });
+    }
+
+    // --- 3. AMBIENT BACKGROUND SYSTEM ---
+    function observeBackground(element) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    document.body.style.backgroundColor = element.getAttribute('data-bg');
+                }
+            });
+        }, { threshold: 0.5 });
+        
+        observer.observe(element);
+    }
+
+    // Initialize
+    processText(bookData);
+
+</script>
+
+</body>
+</html>

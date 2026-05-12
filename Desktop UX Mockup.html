@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crime and Punishment - Interactive Reader</title>
+<style>
+  body {
+    font-family: serif;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 0 20px;
+    line-height: 1.6;
+  }
+  .sentence {
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background-color 0.2s ease, font-weight 0.2s ease;
+  }
+  .highlight {
+    background-color: #ffff00 !important; /* Fluorescent yellow */
+    font-weight: 500 !important;
+  }
+  
+  /* Expansion Panel Styles (Dark mode to support your note-input CSS) */
+  .expansion {
+    margin-top: 10px;
+    margin-bottom: 20px;
+    padding: 16px;
+    border-radius: 12px;
+    background: #1a1c23;
+    color: #e8e8ea;
+    border: 1px solid #2a2f3a;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  }
+  .expansion .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .expansion .left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #a9afbf;
+  }
+  .expansion .tag {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(122,162,255,0.12);
+    border: 1px solid rgba(122,162,255,0.22);
+    color: #7aa2ff;
+    font-weight: 600;
+  }
+  .expansion .close {
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 4px 10px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.04);
+    font-size: 12px;
+  }
+  .expansion .close:hover {
+    background: rgba(255,255,255,0.1);
+  }
+  .expansion .section {
+    margin-top: 14px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    padding-top: 14px;
+  }
+  .expansion h4 {
+    margin: 0 0 10px 0;
+    font-size: 12px;
+    color: #a9afbf;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .defs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .def {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 8px 10px;
+    border-radius: 8px;
+    display: flex;
+    gap: 10px;
+    font-size: 13px;
+    align-items: baseline;
+  }
+  .def code {
+    font-family: monospace;
+    color: #7aa2ff;
+    font-size: 13px;
+  }
+  .def span { color: #a9afbf; }
+
+  /* Note specific CSS provided in prompt */
+  .note-input {
+    width: 100%;
+    border-radius: 8px;
+    padding: 8px 10px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.03);
+    color: #e8e8ea;
+    font: 13px/1.5 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    outline: none;
+    box-sizing: border-box;
+  }
+  .note-input:focus {
+    border-color: rgba(122,162,255,0.35);
+  }
+  .note-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+  .note-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .note-btn {
+    background: rgba(255,255,255,0.08);
+    border: none;
+    color: #a9afbf;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+  }
+  .note-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  .btn {
+    background: #7aa2ff;
+    border: none;
+    color: #000;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  #overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 10;
+  }
+  #overlay.active {
+    display: block;
+  }
+  .active-para {
+    position: relative;
+    z-index: 20;
+    background: #fff;
+    border-radius: 4px;
+    /* Uses a solid shadow to create invisible padding without moving the text */
+    box-shadow: 0 0 0 10px #fff, 0 4px 20px rgba(0,0,0,0.15); 
+  }
+</style>
+</head>
+<body>
+<div id="overlay"></div>
+<div style="margin-bottom: 20px; padding: 10px; background: #f0f0f0; border-radius: 6px; font-family: sans-serif; font-size: 13px;">
+  <strong>Instructions:</strong> Short click a sentence to highlight it. Press and hold a paragraph (for half a second) to open its notes and summary.
+</div>
+
+<b class="center" id="link2HCH0001" style="display: block; line-height: 1.5; margin-top: 2em; margin-bottom: 1em; text-align: center;"> 
+  <span id="2554_123_1" class="sentence">CHAPTER I</span> 
+</b> 
+
+<p style="text-indent: 1em; margin-top: 0.25em; margin-bottom: 0.25em"> 
+  <span id="2554_123_2" class="sentence">On an exceptionally hot evening early in July a young man came out of the garret in which he lodged in S. Place and walked slowly, as though in hesitation, towards K. bridge.</span> 
+</p> 
+
+<p style="text-indent: 1em; margin-top: 0.25em; margin-bottom: 0.25em"> 
+  <span id="2554_123_3" class="sentence">He had successfully avoided meeting his landlady on the staircase.</span> 
+  <span id="2554_123_4" class="sentence">His garret was under the roof of a high, five-storied house and was more like a cupboard than a room.</span> 
+  <span id="2554_123_5" class="sentence">The landlady who provided him with garret, dinners, and attendance, lived on the floor below, and every time he went out he was obliged to pass her kitchen, the door of which invariably stood open.</span> 
+  <span id="2554_123_6" class="sentence">And each time he passed, the young man had a sick, frightened feeling, which made him scowl and feel ashamed.</span> 
+  <span id="2554_123_7" class="sentence">He was hopelessly in debt to his landlady, and was afraid of meeting her.</span> 
+</p> 
+
+<p style="text-indent: 1em; margin-top: 0.25em; margin-bottom: 0.25em"> 
+  <span id="2554_123_8" class="sentence">This was not because he was cowardly and abject, quite the contrary; but for some time past he had been in an overstrained irritable condition, verging on hypochondria.</span> 
+  <span id="2554_123_9" class="sentence">He had become so completely absorbed in himself, and isolated from his fellows that he dreaded meeting, not only his landlady, but anyone at all.</span> 
+  <span id="2554_123_10" class="sentence">He was crushed by poverty, but the anxieties of his position had of late ceased to weigh upon him.</span> 
+  <span id="2554_123_11" class="sentence">He had given up attending to matters of practical importance; he had lost all desire to do so.</span> 
+  <span id="2554_123_12" class="sentence">Nothing that any landlady could do had a real terror for him.</span> 
+  <span id="2554_123_13" class="sentence">But to be stopped on the stairs, to be forced to listen to her trivial, irrelevant gossip, to pestering demands for payment, threats and complaints, and to rack his brains for excuses, to prevaricate, to lie—no, rather than that, he would creep down the stairs like a cat and slip out unseen.</span> 
+</p> 
+
+<p style="text-indent: 1em; margin-top: 0.25em; margin-bottom: 0.25em"> 
+  <span id="2554_123_14" class="sentence">This evening, however, on coming out into the street, he became acutely aware of his fears.</span> 
+</p> 
+
+<p style="text-indent: 1em; margin-top: 0.25em; margin-bottom: 0.25em"> 
+  <span id="2554_123_15" class="sentence">“I want to attempt a thing <i>like that</i> and am frightened by these trifles,” he thought, with an odd smile.</span> 
+  <span id="2554_123_16" class="sentence">“Hm... yes, all is in a man’s hands and he lets it all slip from cowardice, that’s an axiom.</span> 
+  <span id="2554_123_17" class="sentence">It would be interesting to know what it is men are most afraid of.</span> 
+  <span id="2554_123_18" class="sentence">Taking a new step, uttering a new word is what they fear most....</span> 
+  <span id="2554_123_19" class="sentence">But I am talking too much.</span> 
+  <span id="2554_123_20" class="sentence">It’s because I chatter that I do nothing.</span> 
+  <span id="2554_123_21" class="sentence">Or perhaps it is that I chatter because I do nothing.</span> 
+  <span id="2554_123_22" class="sentence">I’ve learned to chatter this last month, lying for days together in my den thinking... of Jack the Giant-killer.</span> 
+  <span id="2554_123_23" class="sentence">Why am I going there now?</span> 
+  <span id="2554_123_24" class="sentence">Am I capable of <i>that</i>?</span> 
+  <span id="2554_123_25" class="sentence">Is <i>that</i> serious?</span> 
+  <span id="2554_123_26" class="sentence">It is not serious at all.</span> 
+  <span id="2554_123_27" class="sentence">It’s simply a fantasy to amuse myself; a plaything!</span> 
+  <span id="2554_123_28" class="sentence">Yes, maybe it is a plaything.”</span> 
+</p> 
+
+<p style="text-indent: 1em; margin-top: 0.25em; margin-bottom: 0.25em"> 
+  <span id="2554_123_29" class="sentence">The heat in the street was terrible: and the airlessness, the bustle and the plaster, scaffolding, bricks, and dust all about him, and that special Petersburg stench, so familiar to all who are unable to get out of town in summer—all worked painfully upon the young man’s already overwrought nerves.</span> 
+  <span id="2554_123_30" class="sentence">The insufferable stench from the pot-houses, which are particularly numerous in that part of the town, and the drunken men whom he met continually, although it was a working day, completed the revolting misery of the picture.</span> 
+  <span id="2554_123_31" class="sentence">An expression of the profoundest disgust gleamed for a moment in the young man’s refined face.</span> 
+  <span id="2554_123_32" class="sentence">He was, by the way, exceptionally handsome, above the average in height, slim, well-built, with beautiful dark eyes and dark brown hair.</span> 
+  <span id="2554_123_33" class="sentence">Soon he sank into deep thought, or more accurately speaking into a complete blankness of mind; he walked along not observing what was about him and not caring to observe it.</span> 
+  <span id="2554_123_34" class="sentence">From time to time, he would mutter something, from the habit of talking to himself, to which he had just confessed.</span> 
+  <span id="2554_123_35" class="sentence">At these moments he would become conscious that his ideas were sometimes in a tangle and that he was very weak; for two days he had scarcely tasted food.</span> 
+</p> 
+
+<script>
+  // 1. Storage Initialization
+  const BOOK_ID = "crime_punishment_v1";
+  const LS_KEY = (k) => `${BOOK_ID}:${k}`;
+  let notes = JSON.parse(localStorage.getItem(LS_KEY("notes")) || "{}");
+
+  function saveState() {
+    localStorage.setItem(LS_KEY("notes"), JSON.stringify(notes));
+  }
+
+  // 2. Data Retrieval for Specific Paragraphs
+  function getParagraphData(pid) {
+    const dataMap = {
+      p1: {
+        summary: "A young man leaves his tiny, sweltering top-floor room in July and walks hesitantly toward a bridge in St. Petersburg.",
+        hardWords: [{ term: "garret", meaning: "A small, cramped top-floor or attic room." }],
+        nouns: [{ term: "S. Place / K. bridge", meaning: "Stolyarny Place and Kokushkin Bridge, real locations in St. Petersburg." }]
+      },
+      p2: {
+        summary: "He manages to sneak past his landlady's open kitchen. He owes her a lot of money and feels sick with fear and shame whenever he has to pass her.",
+        hardWords: [{ term: "invariably", meaning: "In every case or on every occasion; always." }],
+        nouns: []
+      },
+      p3: {
+        summary: "His avoidance isn't out of natural cowardice, but because extreme poverty has driven him into absolute isolation and depression. He'd rather sneak out like a cat than face her demands for rent.",
+        hardWords: [
+          { term: "abject", meaning: "Completely without pride or dignity." },
+          { term: "hypochondria", meaning: "Here, used to describe a state of morbid depression and anxiety." },
+          { term: "prevaricate", meaning: "To speak or act in an evasive way; to lie." }
+        ],
+        nouns: []
+      },
+      p4: {
+        summary: "Despite his usual apathy, stepping outside tonight makes him sharply realize how terrified he actually is.",
+        hardWords: [{ term: "acutely", meaning: "Intensely or sharply." }],
+        nouns: []
+      },
+      p5: {
+        summary: "He mocks his own fear. He is planning to attempt a massive, terrible deed, yet is terrified of his landlady. He realizes his extreme isolation and constant thinking have made him inactive.",
+        hardWords: [{ term: "axiom", meaning: "A universally accepted rule or principle." }],
+        nouns: [{ term: "Jack the Giant-killer", meaning: "An English fairy tale hero, used here mockingly to show his grand but imaginary ambitions." }]
+      }
+    };
+    return dataMap[pid] || { summary: "No summary generated for this paragraph yet.", hardWords: [], nouns: [] };
+  }
+
+  // 3. UI Generation Helpers
+  function createNotesUI(pid) {
+    const section = document.createElement("div");
+    section.className = "section";
+    
+    const title = document.createElement("h4");
+    title.textContent = "Your Notes";
+    section.appendChild(title);
+
+    const inputWrap = document.createElement("div");
+    inputWrap.style.display = "flex";
+    inputWrap.style.gap = "8px";
+    inputWrap.style.marginBottom = "12px";
+
+    const input = document.createElement("input");
+    input.className = "note-input";
+    input.type = "text";
+    input.placeholder = "Add a new note...";
+
+    const addBtn = document.createElement("button");
+    addBtn.textContent = "Add";
+    addBtn.className = "btn";
+
+    inputWrap.appendChild(input);
+    inputWrap.appendChild(addBtn);
+    section.appendChild(inputWrap);
+
+    const listContainer = document.createElement("div");
+    section.appendChild(listContainer);
+
+    const refreshList = () => {
+      listContainer.innerHTML = "";
+      const currentNotes = notes[pid] || [];
+      
+      currentNotes.forEach((noteText, index) => {
+        const item = document.createElement("div");
+        item.className = "note-item";
+        item.style.alignItems = "center"; // Added to align the input box vertically
+
+        const textSpan = document.createElement("span");
+        textSpan.textContent = noteText;
+        textSpan.style.flexGrow = "1";
+        textSpan.style.wordBreak = "break-word";
+
+        const actions = document.createElement("div");
+        actions.className = "note-actions";
+
+        let isEditing = false;
+        let editInput; // Will hold the input element during edit mode
+
+        const editBtn = document.createElement("button");
+        editBtn.className = "note-btn";
+        editBtn.textContent = "Edit";
+        
+        editBtn.onclick = () => {
+          if (!isEditing) {
+            // Enter Edit Mode
+            isEditing = true;
+            editBtn.textContent = "Save";
+            
+            // Swap the span for an input box
+            editInput = document.createElement("input");
+            editInput.className = "note-input";
+            editInput.value = notes[pid][index];
+            editInput.style.marginRight = "10px";
+            
+            item.replaceChild(editInput, textSpan);
+            editInput.focus();
+            
+            // Allow saving by pressing Enter
+            editInput.addEventListener("keydown", (e) => {
+              if (e.key === "Enter") editBtn.click();
+            });
+            
+          } else {
+            // Save and Exit Edit Mode
+            const newText = editInput.value.trim();
+            if (newText !== "") {
+              notes[pid][index] = newText;
+              saveState();
+            }
+            // Rebuilding the list automatically resets the UI back to normal
+            refreshList(); 
+          }
+        };
+
+        const delBtn = document.createElement("button");
+        delBtn.className = "note-btn";
+        delBtn.textContent = "Delete";
+        delBtn.onclick = () => {
+          notes[pid].splice(index, 1);
+          saveState();
+          refreshList();
+        };
+
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+        item.appendChild(textSpan); // Defaults to textSpan initially
+        item.appendChild(actions);
+        listContainer.appendChild(item);
+      });
+    };
+
+    addBtn.onclick = () => {
+      const val = input.value.trim();
+      if (!val) return;
+      if (!notes[pid]) notes[pid] = [];
+      notes[pid].push(val);
+      input.value = "";
+      saveState();
+      refreshList();
+    };
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") addBtn.click();
+    });
+
+    refreshList();
+    return section;
+  }
+
+  function createTextSectionUI(title, contentHTML) {
+    const sec = document.createElement("div");
+    sec.className = "section";
+    sec.innerHTML = `<h4>${title}</h4>${contentHTML}`;
+    return sec;
+  }
+
+  function createDictionaryUI(title, items) {
+    if (!items || items.length === 0) return document.createDocumentFragment();
+    const defsHTML = items.map(d => `
+      <div class="def">
+        <code>${d.term}</code>
+        <span>→</span>
+        <div>${d.meaning}</div>
+      </div>
+    `).join("");
+    return createTextSectionUI(title, `<div class="defs">${defsHTML}</div>`);
+  }
+
+  // 4. Panel Manager
+  function closeAnyOpenPanels() {
+    document.querySelectorAll(".expansion").forEach(panel => panel.remove());
+    document.querySelectorAll('.active-para').forEach(p => p.classList.remove('active-para'));
+    const overlay = document.getElementById('overlay');
+    if (overlay) overlay.classList.remove('active');
+  }
+
+  function openExpansion(node, pid) {
+    const existing = node.querySelector(`.expansion[data-for-para="${pid}"]`);
+    
+    // Always clear the board first
+    closeAnyOpenPanels(); 
+    
+    // If it was already open, we just closed it. Stop here.
+    if (existing) return; 
+
+    // Elevate the paragraph and show the overlay
+    node.classList.add('active-para');
+    document.getElementById('overlay').classList.add('active');
+
+    const panel = document.createElement("div");
+    panel.className = "expansion";
+    panel.dataset.forPara = pid;
+
+    panel.innerHTML = `
+      <div class="row">
+        <div class="left">
+          <span class="tag">Context</span>
+          <span>${pid.toUpperCase()} · inline expansion</span>
+        </div>
+        <div class="close" role="button" tabindex="0">Close</div>
+      </div>
+    `;
+
+    const data = getParagraphData(pid);
+
+    panel.appendChild(createNotesUI(pid));
+    panel.appendChild(createTextSectionUI("Summary", `<p style="margin:0; font-size: 14px;">${data.summary}</p>`));
+    panel.appendChild(createDictionaryUI("Hard Words", data.hardWords));
+    panel.appendChild(createDictionaryUI("Nouns & Entities", data.nouns));
+
+    node.appendChild(panel);
+
+    panel.querySelector(".close").addEventListener("click", closeAnyOpenPanels);
+    setTimeout(() => panel.querySelector(".note-input")?.focus(), 0);
+  }
+
+  // Click the blurred overlay to close the panel
+  document.getElementById('overlay').addEventListener('click', closeAnyOpenPanels);
+
+  // 5. Event Attachments
+  let lastLongPressTime = 0;
+
+  // Setup Paragraphs for Long Press
+  document.querySelectorAll('p').forEach((para, index) => {
+    // p1, p2, p3... mapping (index 0 is the first <p>)
+    const pid = 'p' + (index + 1); 
+    para.dataset.pid = pid;
+    para.style.position = "relative"; // Ensure panel flows well inside
+
+    let pressTimer;
+    let longPressFired = false;
+
+    const startPress = (e) => {
+      if (e.target.closest('.expansion')) return; // Ignore presses inside the panel itself
+      longPressFired = false;
+      pressTimer = setTimeout(() => {
+        longPressFired = true;
+        lastLongPressTime = Date.now();
+        openExpansion(para, pid);
+      }, 450);
+    };
+
+    const cancelPress = () => {
+      clearTimeout(pressTimer);
+    };
+
+    para.addEventListener('pointerdown', startPress);
+    para.addEventListener('pointerup', cancelPress);
+    para.addEventListener('pointercancel', cancelPress);
+    para.addEventListener('pointerleave', cancelPress);
+  });
+
+  // Short click to highlight sentences
+  document.addEventListener('click', function(event) {
+    // Prevent highlight toggle if we just completed a long press
+    if (Date.now() - lastLongPressTime < 100) return; 
+
+    const sentenceElement = event.target.closest('.sentence');
+    if (sentenceElement) {
+      sentenceElement.classList.toggle('highlight');
+    }
+  });
+
+</script>
+
+</body>
+</html>
